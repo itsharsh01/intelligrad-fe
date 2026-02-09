@@ -107,10 +107,10 @@ export default function ModuleDetailScreen() {
       user_question: question,
       context_question: '',
     }
-    console.log('Conversation payload:', payload)
+    // console.log('Conversation payload:', payload)
     try {
       const data = await sendConversationMessage(payload)
-      console.log('Conversation response:', data)
+      // console.log('Conversation response:', data)
       const responseText = (data.response ?? '').trim()
       const looksLikeError = /429|RESOURCE_EXHAUSTED|quota exceeded|"error":\s*\{/i.test(responseText) || responseText.length > 500
       if (looksLikeError) {

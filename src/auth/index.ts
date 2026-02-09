@@ -103,7 +103,7 @@ export async function login(
     throw new Error(message)
   }
   const data = (await res.json()) as AuthResponse
-  console.log('Login API response:', data)
+  // console.log('Login API response:', data)
   const user: User = { id: data.user.id, email: data.user.email }
   persistAuth(data.access_token, data.token_type ?? 'bearer', user)
   return user

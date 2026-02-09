@@ -52,7 +52,7 @@ export default function ModuleQuiz({ moduleId, userId, isLocked }: ModuleQuizPro
       const res = await startQuiz(moduleId, userId)
       setQuizSessionId(res.quiz_session_id)
       setQuestions(res.questions ?? [])
-      console.log('quiz questions', res.questions)
+      // console.log('quiz questions', res.questions)
       setQuizStarted(true)
       setCurrentIndex(0)
       setSelectedAnswer('')
@@ -82,12 +82,12 @@ export default function ModuleQuiz({ moduleId, userId, isLocked }: ModuleQuizPro
       confidence: Math.round(confidence),
       user_id: userId,
     }
-    console.log('Quiz submit payload:', payload)
+    // console.log('Quiz submit payload:', payload)
     setSubmitError(null)
     setSubmitLoading(true)
     try {
       const response = await submitQuizAnswer(payload)
-      console.log('Quiz submit response:', response)
+      // console.log('Quiz submit response:', response)
       setSelectedAnswer('')
       setSelectedOptions([])
       setConfidence(CONFIDENCE_DEFAULT)
@@ -112,7 +112,7 @@ export default function ModuleQuiz({ moduleId, userId, isLocked }: ModuleQuizPro
     getQuizResult(quizSessionId, userId)
       .then((data) => {
         setResult(data)
-        console.log('quiz result', data)
+        // console.log('quiz result', data)
       })
       .catch((err) => setResultError(err instanceof Error ? err.message : 'Failed to load result.'))
       .finally(() => setResultLoading(false))
