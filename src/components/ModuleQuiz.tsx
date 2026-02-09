@@ -86,8 +86,7 @@ export default function ModuleQuiz({ moduleId, userId, isLocked }: ModuleQuizPro
     setSubmitError(null)
     setSubmitLoading(true)
     try {
-      const response = await submitQuizAnswer(payload)
-      // console.log('Quiz submit response:', response)
+      await submitQuizAnswer(payload)
       setSelectedAnswer('')
       setSelectedOptions([])
       setConfidence(CONFIDENCE_DEFAULT)

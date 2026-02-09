@@ -176,8 +176,6 @@ export type QuizResultResponse = {
 
 /** Get quiz result. GET /quiz/result/{quiz_session_id} */
 export async function getQuizResult(quizSessionId: string, userId: number): Promise<QuizResultResponse> {
-  const payload = { quiz_session_id: quizSessionId, user_id: userId }
-  // console.log('getQuizResult payload:', payload)
   const token = getAccessToken()
   if (!token) throw new Error('You must be logged in to view quiz result.')
   const url = `${API_BASE}/quiz/result/${encodeURIComponent(quizSessionId)}?user_id=${userId}`
