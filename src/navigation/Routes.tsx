@@ -46,6 +46,14 @@ export default function Routes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/achievements"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
     </RouterRoutes>
   )
 }

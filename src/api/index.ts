@@ -251,3 +251,41 @@ export async function sendConversationMessage(payload: ConversationRequest): Pro
   }
   return res.json() as Promise<ConversationResponse>
 }
+
+/** Single course score summary from GET /scores/{user_id}/summary */
+export type ScoreSummaryItem = {
+  course_id: string
+  course_name: string
+  total_score: number
+  color_grade: string
+  question_completion_score: number
+  evaluation_score: number
+  conversation_score: number
+  evaluation_count: number
+  conversation_count: number
+}
+
+/** Get scores summary for a user. GET /scores/{user_id}/summary */
+export async function getScoresSummary(userId: number): Promise<ScoreSummaryItem[]> {
+  const token = getAccessToken()
+  if (!token) throw new Error('You must be logged in to view scores.')
+  const res = await fetch(`${API_BASE}/scores/${userId}/summary`, {
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    let message = 'Failed to load scores summary.'
+    try {
+      const json = JSON.parse(text) as { detail?: string }
+      if (typeof json.detail === 'string') message = json.detail
+    } catch {
+      // use default
+    }
+    throw new Error(message)
+  }
+  return res.json() as Promise<ScoreSummaryItem[]>
+}

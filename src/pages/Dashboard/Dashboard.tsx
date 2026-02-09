@@ -1,9 +1,24 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { FaTrophy, FaComments, FaLock, FaEquals, FaSitemap, FaProjectDiagram, FaShieldAlt } from 'react-icons/fa'
+import { FiTrendingUp } from 'react-icons/fi'
+import { IoLayers } from 'react-icons/io5'
 import { getStoredUser, logout } from '../../auth'
+import { getScoresSummary, type ScoreSummaryItem } from '../../api'
 import { SAMPLE_MODULE } from '../../data/sampleModule'
 import { DATA_STRUCTURES_OUTLINE } from '../../data/courseOutline'
 import './Dashboard.css'
+import { TbRosetteDiscountCheck } from 'react-icons/tb'
+import { RiCompasses2Fill } from 'react-icons/ri'
+import { LuBrain } from 'react-icons/lu'
+
+const MILESTONE_MAX = { evaluation: 100, conversation: 50 }
+const MASTERY_LEVELS = [
+  { id: 'array-ace', label: 'Array Ace', mastered: true, icon: 'arrow' },
+  { id: 'stack-specialist', label: 'Stack Specialist', mastered: false, icon: 'equals' },
+  { id: 'tree-navigator', label: 'Tree Navigator', mastered: false, icon: 'tree' },
+  { id: 'graph-guru', label: 'Graph Guru', mastered: false, icon: 'graph' },
+] as const
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: 'grid' },
@@ -22,8 +37,13 @@ const COURSES = [
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const location = useLocation()
   const user = getStoredUser()
-  const [activeNav, setActiveNav] = useState('dashboard')
+  const isAchievements = location.pathname === '/achievements'
+  const [activeNav, setActiveNav] = useState(isAchievements ? 'achievements' : 'dashboard')
+  const [scoresSummary, setScoresSummary] = useState<ScoreSummaryItem[] | null>(null)
+  const [scoresLoading, setScoresLoading] = useState(false)
+  const [scoresError, setScoresError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) {
@@ -31,12 +51,36 @@ export default function Dashboard() {
     }
   }, [user?.id, navigate])
 
+  useEffect(() => {
+    setActiveNav(isAchievements ? 'achievements' : 'dashboard')
+  }, [isAchievements])
+
+  useEffect(() => {
+    if (!isAchievements || !user?.id) return
+    setScoresError(null)
+    setScoresLoading(true)
+    getScoresSummary(user.id)
+      .then((data) => {
+        // console.log('Achievement scores API response:', data)
+        setScoresSummary(Array.isArray(data) ? data : [])
+      })
+      .catch((err) => setScoresError(err instanceof Error ? err.message : 'Failed to load achievements.'))
+      .finally(() => setScoresLoading(false))
+  }, [isAchievements, user?.id])
+
   const handleLogout = () => {
     logout()
     navigate('/login', { replace: true })
   }
 
-  const handleNav = (id: string) => setActiveNav(id)
+  const handleNav = (id: string) => {
+    if (id === 'achievements') {
+      navigate('/achievements')
+      return
+    }
+    setActiveNav(id)
+    if (id === 'dashboard') navigate('/dashboard')
+  }
 
   const openModule = (course?: (typeof COURSES)[0]) => {
     if (course && 'courseOutline' in course && course.courseOutline) {
@@ -69,7 +113,6 @@ export default function Dashboard() {
     }).join(' ')
   const trendPointsStr = getTrendPoints()
   void trendPointsStr
-  if (!user) return null
   return (
     <div className="student-dashboard">
       <aside className="dashboard-sidebar">
@@ -92,7 +135,7 @@ export default function Dashboard() {
             <button
               key={item.id}
               type="button"
-              className={`dashboard-nav-item ${activeNav === item.id ? 'dashboard-nav-item--active' : ''}`}
+              className={`dashboard-nav-item ${(activeNav === item.id || (item.id === 'achievements' && isAchievements)) ? 'dashboard-nav-item--active' : ''}`}
               onClick={() => handleNav(item.id)}
             >
               {item.icon === 'grid' && (
@@ -148,58 +191,159 @@ export default function Dashboard() {
         </header>
 
         <main className="dashboard-main">
-          <div className="dashboard-welcome-row">
-            <div className="dashboard-welcome-text">
-              <h2>Welcome back, {(user.name ?? user.email).split(' ')[0]}! 👋</h2>
-              <p>You&apos;ve mastered <strong>3 new skills</strong> this week. Keep up the momentum!</p>
-            </div>
-          </div>
-
-
-
-          <section className="dashboard-courses">
-            {/* <div className="dashboard-courses-header">
-              <h3>Available Courses</h3>
-              <button type="button" className="dashboard-link">View All Library</button>
-            </div> */}
-            <div className="dashboard-courses-grid">
-              {COURSES.map((course) => {
-                const isDataStructures = course.id === 'data-structures'
-                return (
-                  <div
-                    key={course.id}
-                    className={`dashboard-course-card ${!isDataStructures ? 'dashboard-course-card--disabled' : ''}`}
-                    role="button"
-                    tabIndex={isDataStructures ? 0 : -1}
-                    onClick={() => isDataStructures && openModule(course)}
-                    onKeyDown={(e) => { if (isDataStructures && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openModule(course) } }}
-                  >
-                    <span className={`dashboard-course-difficulty dashboard-course-difficulty--${course.difficultyClass}`}>
-                      {course.difficulty}
-                    </span>
-                    <div className={`dashboard-course-image dashboard-course-image--${course.image}`} />
-                    <h4>{course.title}</h4>
-                    <p>{course.description}</p>
-                    <div className="dashboard-course-meta">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 6v6l4 2" />
-                      </svg>
-                      <span>{course.duration}</span>
+          {isAchievements ? (
+            <div className="dashboard-achievement-gallery">
+              <div className="dashboard-achievement-layout">
+                <div className="dashboard-achievement-main">
+                  <div className="dashboard-achievement-hero">
+                    <div className="dashboard-achievement-shield">
+                      <FaShieldAlt className="dashboard-achievement-shield-icon" aria-hidden />
+                      <span className="dashboard-achievement-shield-num">1</span>
                     </div>
-                    <button
-                      type="button"
-                      className={`dashboard-btn-start ${!isDataStructures ? 'dashboard-btn-start--disabled' : ''}`}
-                      disabled={!isDataStructures}
-                      onClick={(e) => { e.stopPropagation(); if (isDataStructures) openModule(course) }}
-                    >
-                      Start
-                    </button>
+                    <h2 className="dashboard-achievement-title">IntelliGrad Achievement Gallery</h2>
+                    <p className="dashboard-achievement-subtitle">
+                      {scoresSummary?.length
+                        ? 'Data Structures & Algorithms: Level 1 foundations. Master challenges to evolve your ranking in the global mastery path.'
+                        : 'Complete courses to see your achievement gallery here.'}
+                    </p>
                   </div>
-                )
-              })}
+                  {scoresLoading && <p className="dashboard-achievement-loading">Loading…</p>}
+                  {scoresError && <p className="dashboard-achievement-error" role="alert">{scoresError}</p>}
+                  {!scoresLoading && !scoresError && (
+                    <section className="dashboard-achievement-milestones">
+                      <div className="dashboard-achievement-milestones-head">
+                        <h3 className="dashboard-achievement-milestones-title">
+                          <FaTrophy className="dashboard-achievement-milestones-icon" />
+                          Knowledge Milestones
+                        </h3>
+                        <span className="dashboard-achievement-count">
+                          {scoresSummary?.length ? [scoresSummary[0].evaluation_score > 0, scoresSummary[0].conversation_count > 0, scoresSummary[0].question_completion_score > 0].filter(Boolean).length : 0}/4 Unlocked
+                        </span>
+                      </div>
+                      <div className="dashboard-achievement-cards">
+                        <div className="dashboard-achievement-card">
+                          <div className="dashboard-achievement-card-row">
+                            <span className="dashboard-achievement-card-icon" aria-hidden>
+                              <LuBrain />
+                            </span>
+                            <span className="dashboard-achievement-card-lock" aria-hidden><FaLock /></span>
+                          </div>
+                          <h4>Problem Solver</h4>
+                          <p>Evaluation Score: {Number(scoresSummary?.[0]?.evaluation_score ?? 0).toFixed(2)}/{MILESTONE_MAX.evaluation}</p>
+                          <div className="dashboard-achievement-bar"><div className="dashboard-achievement-bar-fill" style={{ width: `${scoresSummary?.[0] ? (scoresSummary[0].evaluation_score / MILESTONE_MAX.evaluation) * 100 : 0}%` }} /></div>
+                        </div>
+                        <div className="dashboard-achievement-card">
+                          <div className="dashboard-achievement-card-row">
+                            <span className="dashboard-achievement-card-icon" aria-hidden><FaComments /></span>
+                            <span className="dashboard-achievement-card-lock" aria-hidden><FaLock /></span>
+                          </div>
+                          <h4>Active Learner</h4>
+                          <p>Conversations: {Number(scoresSummary?.[0]?.conversation_count ?? 0).toFixed(2)}/{MILESTONE_MAX.conversation}</p>
+                          <div className="dashboard-achievement-bar"><div className="dashboard-achievement-bar-fill" style={{ width: `${scoresSummary?.[0] ? (scoresSummary[0].conversation_count / MILESTONE_MAX.conversation) * 100 : 0}%` }} /></div>
+                        </div>
+                        <div className="dashboard-achievement-card">
+                          <div className="dashboard-achievement-card-row">
+                            <span className="dashboard-achievement-card-icon" aria-hidden><TbRosetteDiscountCheck /></span>
+                            <span className="dashboard-achievement-card-lock" aria-hidden><FaLock /></span>
+                          </div>
+                          <h4>Master of Basics</h4>
+                          <p>Question Completion: {Number(scoresSummary?.[0]?.question_completion_score ?? 0).toFixed(2)}%</p>
+                          <div className="dashboard-achievement-bar"><div className="dashboard-achievement-bar-fill" style={{ width: `${scoresSummary?.[0]?.question_completion_score ?? 0}%` }} /></div>
+                        </div>
+                        <div className="dashboard-achievement-card dashboard-achievement-card--ultimate">
+                          <div className="dashboard-achievement-card-row">
+                            <span className="dashboard-achievement-card-icon dashboard-achievement-card-icon--muted" aria-hidden><RiCompasses2Fill /></span>
+                            <span className="dashboard-achievement-card-lock" aria-hidden><FaLock /></span>
+                          </div>
+                          <h4>Data Architect</h4>
+                          <p>Ultimate Level 1 Milestone</p>
+                          <div className="dashboard-achievement-bar"><div className="dashboard-achievement-bar-fill" style={{ width: `${Math.min(100, scoresSummary?.[0]?.total_score ?? 0)}%` }} /></div>
+                        </div>
+                      </div>
+                    </section>
+                  )}
+                  
+                </div>
+                <aside className="dashboard-achievement-sidebar">
+                  <h3 className="dashboard-achievement-sidebar-title">
+                    <FiTrendingUp className="dashboard-achievement-sidebar-title-icon" />
+                    Path to Mastery
+                  </h3>
+                  <div className="dashboard-achievement-path">
+                    {MASTERY_LEVELS.map((level, i) => (
+                      <div key={level.id} className={`dashboard-achievement-path-item ${level.mastered ? 'dashboard-achievement-path-item--mastered' : ''} ${i < MASTERY_LEVELS.length - 1 ? 'dashboard-achievement-path-item--next' : ''}`}>
+                        <div className="dashboard-achievement-path-dot">
+                          {level.icon === 'arrow' && <IoLayers />}
+                          {level.icon === 'equals' && <FaEquals />}
+                          {level.icon === 'tree' && <FaSitemap />}
+                          {level.icon === 'graph' && <FaProjectDiagram />}
+                        </div>
+                        <div className="dashboard-achievement-path-content">
+                          <span className="dashboard-achievement-path-label">{level.label}</span>
+                          {level.mastered ? <span className="dashboard-achievement-path-badge">MASTERED</span> : <span className="dashboard-achievement-path-locked">Locked</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="dashboard-achievement-mastery">
+                    <span className="dashboard-achievement-mastery-label">MASTERY PROGRESS</span>
+                    <span className="dashboard-achievement-mastery-value">{scoresSummary?.[0] ? Number(Math.min(100, scoresSummary[0].total_score)).toFixed(2) : '0.00'}%</span>
+                    <div className="dashboard-achievement-mastery-bar">
+                      <div className="dashboard-achievement-mastery-fill" style={{ width: `${scoresSummary?.[0] ? Math.min(100, Math.round(scoresSummary[0].total_score)) : 0}%` }} />
+                    </div>
+                  </div>
+                </aside>
+              </div>
             </div>
-          </section>
+          ) : (
+            <>
+              <div className="dashboard-welcome-row">
+                <div className="dashboard-welcome-text">
+                  <h2>Welcome back, {(user.name ?? user.email).split(' ')[0]}! 👋</h2>
+                  <p>You&apos;ve mastered <strong>3 new skills</strong> this week. Keep up the momentum!</p>
+                </div>
+              </div>
+              <section className="dashboard-courses">
+                <div className="dashboard-courses-grid">
+                  {COURSES.map((course) => {
+                    const isDataStructures = course.id === 'data-structures'
+                    return (
+                      <div
+                        key={course.id}
+                        className={`dashboard-course-card ${!isDataStructures ? 'dashboard-course-card--disabled' : ''}`}
+                        role="button"
+                        tabIndex={isDataStructures ? 0 : -1}
+                        onClick={() => isDataStructures && openModule(course)}
+                        onKeyDown={(e) => { if (isDataStructures && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openModule(course) } }}
+                      >
+                        <span className={`dashboard-course-difficulty dashboard-course-difficulty--${course.difficultyClass}`}>
+                          {course.difficulty}
+                        </span>
+                        <div className={`dashboard-course-image dashboard-course-image--${course.image}`} />
+                        <h4>{course.title}</h4>
+                        <p>{course.description}</p>
+                        <div className="dashboard-course-meta">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 6v6l4 2" />
+                          </svg>
+                          <span>{course.duration}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className={`dashboard-btn-start ${!isDataStructures ? 'dashboard-btn-start--disabled' : ''}`}
+                          disabled={!isDataStructures}
+                          onClick={(e) => { e.stopPropagation(); if (isDataStructures) openModule(course) }}
+                        >
+                          Start
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            </>
+          )}
         </main>
 
         <div className="dashboard-float-help">
