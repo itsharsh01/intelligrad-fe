@@ -5,9 +5,7 @@
 import { getAccessToken } from '../auth'
 import type { ModuleData } from '../data/sampleModule'
 
-const API_BASE =
-  import.meta.env.VITE_API_URL ??
-  (import.meta.env.DEV ? '/api' : 'http://127.0.0.1:8000')
+const API_BASE = import.meta.env.VITE_API_URL ?? ''
 
 /** Response from GET /content-loading/{module_id} */
 export type ContentLoadingResponse = {
@@ -176,11 +174,14 @@ export type QuizResultResponse = {
   }>
 }
 
-/** Get quiz result. GET /quiz/result */
+/** Get quiz result. GET /quiz/result/{quiz_session_id} */
 export async function getQuizResult(quizSessionId: string, userId: number): Promise<QuizResultResponse> {
+  const payload = { quiz_session_id: quizSessionId, user_id: userId }
+  console.log('getQuizResult payload:', payload)
   const token = getAccessToken()
   if (!token) throw new Error('You must be logged in to view quiz result.')
-  const res = await fetch(`${API_BASE}/quiz/result?quiz_session_id=${encodeURIComponent(quizSessionId)}&user_id=${userId}`, {
+  const url = `${API_BASE}/quiz/result/${encodeURIComponent(quizSessionId)}?user_id=${userId}`
+  const res = await fetch(url, {
     method: 'GET',
     headers: {
       accept: 'application/json',
@@ -198,7 +199,9 @@ export async function getQuizResult(quizSessionId: string, userId: number): Prom
     }
     throw new Error(message)
   }
-  return res.json() as Promise<QuizResultResponse>
+  const result = (await res.json()) as QuizResultResponse
+  console.log('getQuizResult result:', result)
+  return result
 }
 
 /** Request body for POST /conversation/ */

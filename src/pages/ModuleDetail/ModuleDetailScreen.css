@@ -777,10 +777,13 @@
 
 .module-quiz-subjective-wrap {
   margin-bottom: 1rem;
+  min-width: 0;
 }
 
 .module-quiz-textarea {
+  box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
   padding: 0.75rem 1rem;
   font-size: 0.9rem;
   font-family: inherit;

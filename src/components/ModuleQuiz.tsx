@@ -106,7 +106,7 @@ export default function ModuleQuiz({ moduleId, userId, isLocked }: ModuleQuizPro
   }
 
   useEffect(() => {
-    if (!isComplete || !quizSessionId || userId === 0 || result != null || resultLoading) return
+    if (!isComplete || !quizSessionId || userId === 0 || result != null || resultLoading || resultError != null) return
     setResultError(null)
     setResultLoading(true)
     getQuizResult(quizSessionId, userId)

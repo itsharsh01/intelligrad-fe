@@ -22,19 +22,17 @@ const COURSES = [
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [user, setUser] = useState(getStoredUser())
+  const user = getStoredUser()
   const [activeNav, setActiveNav] = useState('dashboard')
 
   useEffect(() => {
     if (!user) {
       navigate('/login', { replace: true })
-      return
     }
-  }, [user, navigate])
+  }, [user?.id, navigate])
 
   const handleLogout = () => {
     logout()
-    setUser(null)
     navigate('/login', { replace: true })
   }
 
@@ -71,6 +69,7 @@ export default function Dashboard() {
     }).join(' ')
   const trendPointsStr = getTrendPoints()
   void trendPointsStr
+  if (!user) return null
   return (
     <div className="student-dashboard">
       <aside className="dashboard-sidebar">

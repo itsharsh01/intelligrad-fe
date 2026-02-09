@@ -2,9 +2,7 @@
  * Auth module: login/register via backend API, token stored in localStorage.
  */
 
-const API_BASE =
-  import.meta.env.VITE_API_URL ??
-  (import.meta.env.DEV ? '/api' : 'http://127.0.0.1:8000')
+const API_BASE = import.meta.env.VITE_API_URL ?? ''
 const STORAGE_KEY = 'intelligrad_auth'
 
 export type User = {
